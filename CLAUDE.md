@@ -125,9 +125,4 @@ app/
 
 ## 仕様書
 
-詳細仕様は `docs/` を参照:
-- `requirements.md` — 機能要件・ユーザーフロー
-- `db-schema.md` — テーブル定義・制約
-- `page-details.md` — ロール別UI/画面設計
-- `daily-input-voice-phase-tech-spec.md` — 音声入力→Whisper→保存フロー
-- `output-generation-ai-summary-spec.md` — 非同期AIジョブ+Reverb通知仕様
+詳細仕様は `docs/` を参照（ファイルリストは `README.md` を参照）。
