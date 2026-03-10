@@ -56,6 +56,25 @@
 }
 ```
 
+### GET /api/user
+
+認証済みユーザーの情報を返す。SPA起動時の認証状態確認に使用。
+
+**ミドルウェア:** `auth`
+
+**レスポンス 200**
+```json
+{
+    "user": {
+        "id": 1,
+        "name": "山田 太郎",
+        "email": "user@example.com",
+        "is_admin": false,
+        "company_id": 1
+    }
+}
+```
+
 ### POST /api/logout
 
 ログアウト。
