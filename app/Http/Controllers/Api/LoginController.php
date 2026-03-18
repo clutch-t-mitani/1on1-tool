@@ -19,7 +19,7 @@ final class LoginController extends Controller
      */
     public function store(LoginRequest $request): JsonResponse
     {
-        if (! Auth::attempt($request->only('email', 'password'))) {
+        if (! Auth::guard('web')->attempt($request->only('email', 'password'))) {
             throw ValidationException::withMessages([
                 'email' => ['メールアドレスまたはパスワードが正しくありません。'],
             ]);
@@ -27,13 +27,15 @@ final class LoginController extends Controller
 
         $request->session()->regenerate();
 
+        $user = Auth::guard('web')->user();
+
         return response()->json([
             'user' => [
-                'id'         => Auth::user()->id,
-                'name'       => Auth::user()->name,
-                'email'      => Auth::user()->email,
-                'is_admin'   => Auth::user()->is_admin,
-                'company_id' => Auth::user()->company_id,
+                'id'         => $user->id,
+                'name'       => $user->name,
+                'email'      => $user->email,
+                'is_admin'   => $user->is_admin,
+                'company_id' => $user->company_id,
             ],
         ]);
     }
@@ -43,7 +45,7 @@ final class LoginController extends Controller
      */
     public function destroy(Request $request): Response
     {
-        Auth::logout();
+        Auth::guard('web')->logout();
 
         $request->session()->invalidate();
         $request->session()->regenerateToken();

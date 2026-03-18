@@ -15,10 +15,12 @@ final class DailyLog extends Model
         'user_id',
         'question_id',
         'answer_text',
+        'target_date',
         'summarized_at',
     ];
 
     protected $casts = [
+        'target_date'   => 'date',
         'summarized_at' => 'datetime',
     ];
 

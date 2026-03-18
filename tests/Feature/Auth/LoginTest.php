@@ -56,11 +56,11 @@ final class LoginTest extends TestCase
         $company = Company::factory()->create();
         $user = User::factory()->create(['company_id' => $company->id]);
 
-        $response = $this->actingAs($user)->postJson('/api/logout');
+        $response = $this->actingAs($user, 'web')->postJson('/api/logout');
 
         $response->assertNoContent();
 
-        $this->assertGuest();
+        $this->assertGuest('web');
     }
 
     public function test_未ログイン状態でログアウトすると401(): void
