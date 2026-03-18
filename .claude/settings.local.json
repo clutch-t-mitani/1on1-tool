@@ -32,7 +32,11 @@
       "Bash(./vendor/bin/sail test)",
       "Bash(git status -u)",
       "Bash(./vendor/bin/sail composer:*)",
-      "Bash(./vendor/bin/sail artisan:*)"
+      "Bash(./vendor/bin/sail artisan:*)",
+      "Bash(find /Users/mitanitomoyuki/Documents/study/1on1-tool/app -name *Auth* -o -name *auth*)",
+      "Bash(gh issue:*)",
+      "Bash(codex exec:*)",
+      "Bash(./vendor/bin/sail test:*)"
     ],
     "deny": [
       "Bash(sudo *)",
