@@ -14,15 +14,19 @@ final class Analysis extends Model
     protected $fillable = [
         'user_id',
         'viewer_id',
+        'status',
         'summary_content',
         'annotation_text',
+        'error_message',
         'published_at',
+        'failed_at',
     ];
 
     protected function casts(): array
     {
         return [
             'published_at' => 'datetime',
+            'failed_at'    => 'datetime',
         ];
     }
 

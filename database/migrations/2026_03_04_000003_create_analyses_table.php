@@ -12,9 +12,12 @@ return new class extends Migration
             $table->id();
             $table->foreignId('user_id')->constrained('users');
             $table->foreignId('viewer_id')->nullable()->constrained('users');
+            $table->string('status')->default('pending');
             $table->text('summary_content')->nullable();
             $table->text('annotation_text')->nullable();
+            $table->text('error_message')->nullable();
             $table->timestamp('published_at')->nullable();
+            $table->timestamp('failed_at')->nullable();
             $table->timestamps();
             $table->softDeletes();
             $table->index('published_at');

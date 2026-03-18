@@ -13,10 +13,11 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained('users');
             $table->foreignId('question_id')->constrained('questions');
             $table->text('answer_text');
+            $table->date('target_date');
             $table->timestamp('summarized_at')->nullable();
             $table->timestamps();
             $table->softDeletes();
-            $table->index(['user_id', 'question_id']);
+            $table->unique(['user_id', 'question_id', 'target_date']);
             $table->index('created_at');
         });
     }
