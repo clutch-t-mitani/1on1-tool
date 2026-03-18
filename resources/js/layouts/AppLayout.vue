@@ -12,7 +12,7 @@
                 </a>
                 <div class="flex items-center gap-4">
                     <span class="text-sm text-slate-600">{{ auth.user?.name }}</span>
-                    <button type="button" class="text-sm text-slate-500 transition hover:text-slate-700" @click="handleLogout">ログアウト</button>
+                    <button type="button" class="cursor-pointer text-sm text-slate-500 transition hover:text-slate-700" @click="handleLogout">ログアウト</button>
                 </div>
             </div>
         </header>

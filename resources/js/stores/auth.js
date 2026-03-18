@@ -19,6 +19,8 @@ export const useAuthStore = defineStore('auth', () => {
     async function login(email, password) {
         const response = await axios.post('/api/login', { email, password });
         user.value = response.data.user;
+        // ログイン後にCSRFクッキーを再取得してaxiosのトークンを最新化する
+        await axios.get('/sanctum/csrf-cookie');
     }
 
     async function logout() {
