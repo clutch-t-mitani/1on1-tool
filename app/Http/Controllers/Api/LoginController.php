@@ -21,7 +21,7 @@ final class LoginController extends Controller
     {
         if (! Auth::guard('web')->attempt($request->only('email', 'password'))) {
             throw ValidationException::withMessages([
-                'email' => ['メールアドレスまたはパスワードが正しくありません。'],
+                'auth' => ['メールアドレスまたはパスワードが正しくありません。'],
             ]);
         }
 

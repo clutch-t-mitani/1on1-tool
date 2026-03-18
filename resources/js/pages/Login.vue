@@ -15,10 +15,10 @@
 
                 <!-- ログインフォーム -->
                 <div class="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
-                    <form class="space-y-5" @submit.prevent="handleLogin">
-                        <!-- エラー表示 -->
-                        <div v-if="errorMessage" class="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-                            {{ errorMessage }}
+                    <form class="space-y-5" @submit.prevent="handleLogin" novalidate>
+                        <!-- 全体エラー表示 -->
+                        <div v-if="generalError" class="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                            {{ generalError }}
                         </div>
 
                         <!-- メールアドレス -->
@@ -28,11 +28,18 @@
                                 id="email"
                                 v-model="form.email"
                                 type="email"
-                                required
                                 autocomplete="email"
+                                maxlength="255"
                                 placeholder="例: tanaka@example.com"
-                                class="block w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-800 placeholder-slate-400 shadow-sm transition focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                                :aria-invalid="Boolean(fieldErrors.email)"
+                                aria-describedby="email-error"
+                                class="block w-full rounded-lg border bg-white px-3.5 py-2.5 text-sm text-slate-800 placeholder-slate-400 shadow-sm transition focus:outline-none focus:ring-2"
+                                :class="fieldErrors.email
+                                    ? 'border-red-400 focus:border-red-500 focus:ring-red-500/20'
+                                    : 'border-slate-300 focus:border-indigo-500 focus:ring-indigo-500/20'"
+                                @input="clearFieldError('email')"
                             >
+                            <p v-if="fieldErrors.email" id="email-error" class="mt-1.5 text-xs text-red-600">{{ fieldErrors.email }}</p>
                         </div>
 
                         <!-- パスワード -->
@@ -42,11 +49,18 @@
                                 id="password"
                                 v-model="form.password"
                                 type="password"
-                                required
                                 autocomplete="current-password"
+                                maxlength="255"
                                 placeholder="パスワードを入力"
-                                class="block w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-800 placeholder-slate-400 shadow-sm transition focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                                :aria-invalid="Boolean(fieldErrors.password)"
+                                aria-describedby="password-error"
+                                class="block w-full rounded-lg border bg-white px-3.5 py-2.5 text-sm text-slate-800 placeholder-slate-400 shadow-sm transition focus:outline-none focus:ring-2"
+                                :class="fieldErrors.password
+                                    ? 'border-red-400 focus:border-red-500 focus:ring-red-500/20'
+                                    : 'border-slate-300 focus:border-indigo-500 focus:ring-indigo-500/20'"
+                                @input="clearFieldError('password')"
                             >
+                            <p v-if="fieldErrors.password" id="password-error" class="mt-1.5 text-xs text-red-600">{{ fieldErrors.password }}</p>
                         </div>
 
                         <!-- ログインボタン -->
@@ -64,8 +78,8 @@
                     </form>
                 </div>
 
-                <!-- テストユーザー情報 -->
-                <div class="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                <!-- テストユーザー情報（開発環境のみ表示） -->
+                <div v-if="isDev" class="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
                     <p class="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-400">テストアカウント</p>
                     <div class="space-y-3">
                         <button
@@ -106,7 +120,13 @@ const form = reactive({
 });
 
 const isLoading = ref(false);
-const errorMessage = ref('');
+const generalError = ref('');
+const fieldErrors = reactive({
+    email: '',
+    password: '',
+});
+
+const isDev = import.meta.env.DEV;
 
 const testAccounts = [
     { email: 'admin@example.com', password: 'password', label: 'システム管理者', badge: '管', badgeClass: 'bg-amber-100 text-amber-700' },
@@ -114,17 +134,66 @@ const testAccounts = [
     { email: 'manager@example.com', password: 'password', label: '山田 太郎（上司）', badge: '上', badgeClass: 'bg-emerald-100 text-emerald-700' },
 ];
 
+function clearFieldError(field) {
+    fieldErrors[field] = '';
+}
+
+function clearAllErrors() {
+    generalError.value = '';
+    fieldErrors.email = '';
+    fieldErrors.password = '';
+}
+
+function validateForm() {
+    let isValid = true;
+
+    if (!form.email.trim()) {
+        fieldErrors.email = 'メールアドレスを入力してください。';
+        isValid = false;
+    }
+
+    if (!form.password) {
+        fieldErrors.password = 'パスワードを入力してください。';
+        isValid = false;
+    }
+
+    return isValid;
+}
+
 async function handleLogin() {
-    errorMessage.value = '';
+    clearAllErrors();
+
+    form.email = form.email.trim();
+
+    if (!validateForm()) {
+        return;
+    }
+
     isLoading.value = true;
 
     try {
         await auth.login(form.email, form.password);
         router.push(auth.isAdmin ? { name: 'admin.dashboard' } : { name: 'dashboard' });
     } catch (error) {
-        errorMessage.value = error.response?.data?.errors?.email?.[0]
-            || error.response?.data?.message
-            || 'ログインに失敗しました。もう一度お試しください。';
+        const errors = error.response?.data?.errors;
+        if (errors) {
+            if (errors.email) {
+                fieldErrors.email = errors.email[0];
+            }
+            if (errors.password) {
+                fieldErrors.password = errors.password[0];
+            }
+            if (errors.auth) {
+                generalError.value = errors.auth[0];
+            }
+            if (!errors.email && !errors.password && !errors.auth) {
+                generalError.value = Object.values(errors).flat()[0] || 'ログインに失敗しました。';
+            }
+        } else if (error.response?.status === 429) {
+            generalError.value = 'ログイン試行回数が上限に達しました。しばらくしてからお試しください。';
+        } else {
+            generalError.value = 'ログインに失敗しました。もう一度お試しください。';
+        }
     } finally {
         isLoading.value = false;
     }

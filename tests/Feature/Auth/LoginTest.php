@@ -46,7 +46,57 @@ final class LoginTest extends TestCase
         ]);
 
         $response->assertUnprocessable()
-            ->assertJsonValidationErrors(['email']);
+            ->assertJsonValidationErrors(['auth'])
+            ->assertJsonPath('errors.auth.0', 'メールアドレスまたはパスワードが正しくありません。');
+
+        $this->assertGuest();
+    }
+
+    public function test_メールアドレス未入力時はバリデーションエラーを返す(): void
+    {
+        $response = $this->postJson('/api/login', [
+            'email'    => '',
+            'password' => 'password',
+        ]);
+
+        $response->assertUnprocessable()
+            ->assertJsonValidationErrors(['email'])
+            ->assertJsonPath('errors.email.0', 'メールアドレスを入力してください。');
+    }
+
+    public function test_パスワード未入力時はバリデーションエラーを返す(): void
+    {
+        $response = $this->postJson('/api/login', [
+            'email'    => 'test@example.com',
+            'password' => '',
+        ]);
+
+        $response->assertUnprocessable()
+            ->assertJsonValidationErrors(['password'])
+            ->assertJsonPath('errors.password.0', 'パスワードを入力してください。');
+    }
+
+    public function test_メールアドレス形式が不正な場合はバリデーションエラーを返す(): void
+    {
+        $response = $this->postJson('/api/login', [
+            'email'    => 'invalid-email',
+            'password' => 'password',
+        ]);
+
+        $response->assertUnprocessable()
+            ->assertJsonValidationErrors(['email'])
+            ->assertJsonPath('errors.email.0', 'メールアドレスの形式が正しくありません。');
+    }
+
+    public function test_存在しないメールアドレスでは認証エラーを返す(): void
+    {
+        $response = $this->postJson('/api/login', [
+            'email'    => 'nonexistent@example.com',
+            'password' => 'password',
+        ]);
+
+        $response->assertUnprocessable()
+            ->assertJsonValidationErrors(['auth']);
 
         $this->assertGuest();
     }
