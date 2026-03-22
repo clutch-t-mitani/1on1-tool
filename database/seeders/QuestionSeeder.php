@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\Company;
 use App\Models\Question;
 use Illuminate\Database\Seeder;
 
@@ -9,6 +10,8 @@ class QuestionSeeder extends Seeder
 {
     public function run(): void
     {
+        $company = Company::first();
+
         $questions = [
             'やったこと（今日の出来事・文脈）',
             'プラスの感情（嬉しかった・達成感があったこと）',
@@ -18,8 +21,9 @@ class QuestionSeeder extends Seeder
 
         foreach ($questions as $content) {
             Question::create([
-                'content'   => $content,
-                'is_active' => true,
+                'company_id' => $company->id,
+                'content'    => $content,
+                'is_active'  => true,
             ]);
         }
     }
