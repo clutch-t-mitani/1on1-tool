@@ -83,11 +83,11 @@
                     <textarea
                         v-model="currentAnswer.text"
                         rows="5"
-                        maxlength="2000"
+                        maxlength="100"
                         placeholder="ここに入力してください"
                         class="w-full resize-none rounded-xl border border-slate-200 px-4 py-3 text-sm text-slate-700 placeholder-slate-300 outline-none transition focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100"
                     ></textarea>
-                    <p class="mt-1 text-right text-xs text-slate-400">{{ currentAnswer.text.length }} / 2000</p>
+                    <p class="mt-1 text-right text-xs text-slate-400">{{ currentAnswer.text.length }} / 100</p>
                 </div>
 
                 <!-- 音声入力 -->
