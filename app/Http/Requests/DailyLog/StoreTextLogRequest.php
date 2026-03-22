@@ -25,7 +25,7 @@ final class StoreTextLogRequest extends FormRequest
                     ->where('is_active', true)
                     ->whereNull('deleted_at')),
             ],
-            'answer_text' => ['required', 'string', 'min:1', 'max:2000'],
+            'answer_text' => ['required', 'string', 'min:1', 'max:100'],
         ];
     }
 }

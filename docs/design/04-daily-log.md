@@ -148,7 +148,7 @@ GET /api/daily-logs/status
 | フィールド | ルール |
 |---|---|
 | `question_id` | 必須、整数、`questions` テーブルに存在かつ `is_active = true` |
-| `answer_text` | 必須、文字列、1文字以上・2000文字以内 |
+| `answer_text` | 必須、文字列、1文字以上・100文字以内 |
 
 ### StoreVoiceLogRequest
 
