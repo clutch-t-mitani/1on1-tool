@@ -44,6 +44,7 @@
 | **カラム名** | **データ型** | **NULL** | **キー** | **説明** |
 | --- | --- | --- | --- | --- |
 | `id` | bigint | NO | PK | 質問ID |
+| `company_id` | bigint | NO | FK | 所属会社ID |
 | `content` | text | NO |  | 質問文 |
 | `is_active` | boolean | NO |  | 有効フラグ（falseで非表示） |
 | `created_at` | timestamp | YES |  | 作成日時 |

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -12,6 +13,7 @@ final class Question extends Model
     use SoftDeletes;
 
     protected $fillable = [
+        'company_id',
         'content',
         'is_active',
     ];
@@ -21,6 +23,11 @@ final class Question extends Model
         return [
             'is_active' => 'boolean',
         ];
+    }
+
+    public function company(): BelongsTo
+    {
+        return $this->belongsTo(Company::class);
     }
 
     public function dailyLogs(): HasMany

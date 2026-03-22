@@ -22,6 +22,7 @@ final class StoreVoiceLogRequest extends FormRequest
                 'required',
                 'integer',
                 Rule::exists('questions', 'id')->where(fn ($query) => $query
+                    ->where('company_id', $this->user()->company_id)
                     ->where('is_active', true)
                     ->whereNull('deleted_at')),
             ],
