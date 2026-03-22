@@ -37,7 +37,10 @@
             <!-- プログレス表示 -->
             <div class="mb-6">
                 <div class="mb-2 flex items-center justify-between">
-                    <h1 class="text-xl font-bold text-slate-800">今日の気持ちを記録する</h1>
+                    <div>
+                        <h1 class="text-xl font-bold text-slate-800">今日の気持ちを記録する</h1>
+                        <p class="mt-1 inline-block rounded-full bg-indigo-50 px-3 py-0.5 text-sm font-medium text-indigo-600">{{ today }}</p>
+                    </div>
                     <span class="text-sm text-slate-400">{{ currentStep + 1 }} / {{ questions.length }}</span>
                 </div>
                 <div class="h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
@@ -160,6 +163,8 @@ const questions = [
     { id: 3, text: '今日感じたマイナスの感情はなんですか？' },
     { id: 4, text: '本音ベースで、今の気持ちを自由に話してください（独り言・生のログ）' },
 ];
+
+const today = new Date().toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' });
 
 const currentStep = ref(0);
 const isConfirmStep = ref(false);
