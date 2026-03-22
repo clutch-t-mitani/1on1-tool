@@ -10,7 +10,7 @@ class QuestionSeeder extends Seeder
 {
     public function run(): void
     {
-        $company = Company::first();
+        $company = Company::query()->firstOrCreate(['name' => '株式会社サンプル']);
 
         $questions = [
             'やったこと（今日の出来事・文脈）',
@@ -20,11 +20,10 @@ class QuestionSeeder extends Seeder
         ];
 
         foreach ($questions as $content) {
-            Question::create([
-                'company_id' => $company->id,
-                'content'    => $content,
-                'is_active'  => true,
-            ]);
+            Question::updateOrCreate(
+                ['company_id' => $company->id, 'content' => $content],
+                ['is_active' => true],
+            );
         }
     }
 }
