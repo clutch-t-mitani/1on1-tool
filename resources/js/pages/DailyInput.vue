@@ -53,20 +53,22 @@
                 <p class="mb-1 text-xs font-medium uppercase tracking-wide text-indigo-400">質問 {{ currentStep + 1 }}</p>
                 <h2 class="mb-5 text-base font-semibold text-slate-800">{{ currentQuestion.text }}</h2>
 
-                <!-- テキスト / 音声 切り替え -->
+                <!-- テキスト / 音声 切り替え（録音中はロック） -->
                 <div class="mb-4 flex gap-2">
                     <button
                         type="button"
-                        class="rounded-lg px-3 py-1.5 text-sm font-medium transition"
+                        class="rounded-lg px-3 py-1.5 text-sm font-medium transition disabled:opacity-40"
                         :class="currentAnswer.mode === 'text' ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'"
+                        :disabled="isRecording"
                         @click="setMode('text')"
                     >
                         テキスト
                     </button>
                     <button
                         type="button"
-                        class="rounded-lg px-3 py-1.5 text-sm font-medium transition"
+                        class="rounded-lg px-3 py-1.5 text-sm font-medium transition disabled:opacity-40"
                         :class="currentAnswer.mode === 'voice' ? 'bg-sky-100 text-sky-700' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'"
+                        :disabled="isRecording"
                         @click="setMode('voice')"
                     >
                         音声
@@ -95,8 +97,13 @@
                         <button type="button" class="text-xs text-slate-400 hover:text-slate-600" @click="clearAudio">やり直す</button>
                     </div>
 
-                    <div v-else>
-                        <p v-if="isRecording" class="mb-3 flex items-center gap-2 text-sm text-rose-500">
+                    <div v-else class="flex flex-col items-center gap-3">
+                        <!-- 波形アニメーション（録音中のみ表示） -->
+                        <div v-if="isRecording" class="flex items-end gap-1 h-10">
+                            <span v-for="i in 12" :key="i" class="w-1 rounded bg-rose-400 animate-pulse" :style="{ height: `${12 + (i % 4) * 8}px` }"></span>
+                        </div>
+
+                        <p v-if="isRecording" class="flex items-center gap-2 text-sm text-rose-500">
                             <span class="inline-block h-2 w-2 animate-pulse rounded-full bg-rose-500"></span>
                             録音中… {{ formatDuration(recordingDuration) }}
                         </p>
@@ -113,19 +120,19 @@
                                 <rect x="6" y="6" width="12" height="12" rx="2" />
                             </svg>
                         </button>
-                        <p class="mt-2 text-center text-xs text-slate-400">{{ isRecording ? 'タップして停止' : 'タップして録音開始' }}</p>
+                        <p class="text-center text-xs text-slate-400">{{ isRecording ? 'タップして停止' : 'タップして録音開始' }}</p>
                     </div>
 
                     <p v-if="micError" class="text-xs text-rose-500">{{ micError }}</p>
                 </div>
             </div>
 
-            <!-- ナビゲーション -->
+            <!-- ナビゲーション（録音中は戻るをロック） -->
             <div class="mt-6 flex justify-between">
                 <button
                     type="button"
                     class="rounded-lg border border-slate-200 bg-white px-5 py-2.5 text-sm font-medium text-slate-600 transition hover:bg-slate-50 disabled:opacity-40"
-                    :disabled="currentStep === 0"
+                    :disabled="currentStep === 0 || isRecording"
                     @click="prevStep"
                 >
                     戻る
@@ -171,7 +178,9 @@ const isRecording = ref(false);
 const recordingDuration = ref(0);
 const micError = ref('');
 let mediaRecorder = null;
+let mediaStream = null;
 let recordingTimer = null;
+let recordingStepIndex = null;
 let audioChunks = [];
 
 const currentQuestion = computed(() => questions[currentStep.value]);
@@ -210,12 +219,29 @@ async function toggleRecording() {
     }
 }
 
+function cleanupRecorder() {
+    if (recordingTimer) {
+        clearInterval(recordingTimer);
+        recordingTimer = null;
+    }
+    if (mediaStream) {
+        mediaStream.getTracks().forEach((track) => track.stop());
+        mediaStream = null;
+    }
+    mediaRecorder = null;
+    audioChunks = [];
+    isRecording.value = false;
+}
+
 async function startRecording() {
     micError.value = '';
+    recordingStepIndex = currentStep.value;
+    recordingDuration.value = 0;
+    audioChunks = [];
+
     try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        audioChunks = [];
-        mediaRecorder = new MediaRecorder(stream);
+        mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        mediaRecorder = new MediaRecorder(mediaStream);
 
         mediaRecorder.ondataavailable = (event) => {
             if (event.data.size > 0) {
@@ -224,29 +250,37 @@ async function startRecording() {
         };
 
         mediaRecorder.onstop = () => {
-            const blob = new Blob(audioChunks, { type: 'audio/webm' });
-            answers.value[currentStep.value].audioBlob = blob;
-            answers.value[currentStep.value].audioDuration = recordingDuration.value;
-            stream.getTracks().forEach((track) => track.stop());
+            const target = answers.value[recordingStepIndex];
+            if (target) {
+                target.audioBlob = new Blob(audioChunks, { type: mediaRecorder?.mimeType || 'audio/webm' });
+                target.audioDuration = recordingDuration.value;
+            }
+            cleanupRecorder();
         };
 
         mediaRecorder.start();
         isRecording.value = true;
-        recordingDuration.value = 0;
         recordingTimer = setInterval(() => {
             recordingDuration.value++;
         }, 1000);
-    } catch {
-        micError.value = 'マイクへのアクセスが許可されていません。';
+    } catch (error) {
+        cleanupRecorder();
+
+        if (!navigator.mediaDevices?.getUserMedia) {
+            micError.value = 'このブラウザは音声録音に対応していません。';
+        } else if (!window.MediaRecorder) {
+            micError.value = 'このブラウザは録音機能に対応していません。';
+        } else if (error?.name === 'NotAllowedError') {
+            micError.value = 'マイク権限が拒否されています。ブラウザの設定を確認してください。';
+        } else {
+            micError.value = '録音の開始に失敗しました。時間をおいて再試行してください。';
+        }
     }
 }
 
 function stopRecording() {
     if (mediaRecorder && isRecording.value) {
         mediaRecorder.stop();
-        isRecording.value = false;
-        clearInterval(recordingTimer);
-        recordingTimer = null;
     }
 }
 
@@ -268,6 +302,6 @@ function handleSubmit() {
 
 onUnmounted(() => {
     if (isRecording.value) stopRecording();
-    clearInterval(recordingTimer);
+    cleanupRecorder();
 });
 </script>
