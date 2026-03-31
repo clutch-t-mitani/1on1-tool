@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
 import Login from '../pages/Login.vue';
 import Dashboard from '../pages/Dashboard.vue';
+import DailyInput from '../pages/DailyInput.vue';
 import AdminDashboard from '../pages/admin/Dashboard.vue';
 
 const routes = [
@@ -15,6 +16,12 @@ const routes = [
         path: '/dashboard',
         name: 'dashboard',
         component: Dashboard,
+        meta: { requiresAuth: true },
+    },
+    {
+        path: '/daily-input',
+        name: 'daily-input',
+        component: DailyInput,
         meta: { requiresAuth: true },
     },
     {
