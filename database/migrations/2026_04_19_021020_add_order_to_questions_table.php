@@ -10,17 +10,16 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('questions', function (Blueprint $table) {
-            $table->unsignedInteger('order')->default(0)->after('is_active');
+            $table->unsignedInteger('display_order')->default(0)->after('is_active');
         });
 
-        // 既存レコードに id 順で order を振る
-        DB::statement('UPDATE questions SET `order` = id WHERE deleted_at IS NULL');
+        DB::statement('UPDATE questions SET display_order = id');
     }
 
     public function down(): void
     {
         Schema::table('questions', function (Blueprint $table) {
-            $table->dropColumn('order');
+            $table->dropColumn('display_order');
         });
     }
 };

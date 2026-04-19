@@ -188,7 +188,11 @@ const answers = ref([]);
 onMounted(async () => {
     try {
         const response = await axios.get('/api/questions');
-        questions.value = response.data.data;
+        const fetchedQuestions = response.data?.data;
+        if (!Array.isArray(fetchedQuestions)) {
+            throw new Error('Invalid questions response');
+        }
+        questions.value = fetchedQuestions;
         answers.value = questions.value.map(() => ({
             mode: 'text',
             text: '',

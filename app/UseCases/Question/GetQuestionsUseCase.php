@@ -15,7 +15,8 @@ final class GetQuestionsUseCase
         return Question::query()
             ->where('company_id', $companyId)
             ->active()
-            ->orderBy('order')
+            ->orderBy('display_order')
+            ->orderBy('id')
             ->get();
     }
 }

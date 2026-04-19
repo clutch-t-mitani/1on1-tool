@@ -13,6 +13,7 @@ final class GetQuestionsTest extends TestCase
     use RefreshDatabase;
 
     private User $user;
+
     private Company $company;
 
     protected function setUp(): void
@@ -20,27 +21,29 @@ final class GetQuestionsTest extends TestCase
         parent::setUp();
 
         $this->company = Company::factory()->create();
-        $this->user    = User::factory()->create(['company_id' => $this->company->id]);
+        $this->user = User::factory()->create(['company_id' => $this->company->id]);
     }
 
     public function test_ログイン済みユーザーが自社の質問一覧を取得できる(): void
     {
-        Question::create(['company_id' => $this->company->id, 'content' => '質問1', 'is_active' => true, 'order' => 1]);
-        Question::create(['company_id' => $this->company->id, 'content' => '質問2', 'is_active' => true, 'order' => 2]);
+        $q1 = Question::create(['company_id' => $this->company->id, 'content' => '質問1', 'is_active' => true, 'display_order' => 1]);
+        $q2 = Question::create(['company_id' => $this->company->id, 'content' => '質問2', 'is_active' => true, 'display_order' => 2]);
 
         $response = $this->actingAs($this->user)->getJson('/api/questions');
 
         $response->assertOk();
         $response->assertJsonCount(2, 'data');
+        $response->assertJsonPath('data.0.id', $q1->id);
         $response->assertJsonPath('data.0.text', '質問1');
+        $response->assertJsonPath('data.1.id', $q2->id);
         $response->assertJsonPath('data.1.text', '質問2');
     }
 
     public function test_他社の質問は取得されない(): void
     {
         $otherCompany = Company::factory()->create();
-        Question::create(['company_id' => $otherCompany->id, 'content' => '他社の質問', 'is_active' => true, 'order' => 1]);
-        Question::create(['company_id' => $this->company->id, 'content' => '自社の質問', 'is_active' => true, 'order' => 1]);
+        Question::create(['company_id' => $otherCompany->id, 'content' => '他社の質問', 'is_active' => true, 'display_order' => 1]);
+        Question::create(['company_id' => $this->company->id, 'content' => '自社の質問', 'is_active' => true, 'display_order' => 1]);
 
         $response = $this->actingAs($this->user)->getJson('/api/questions');
 
@@ -51,8 +54,8 @@ final class GetQuestionsTest extends TestCase
 
     public function test_無効な質問は取得されない(): void
     {
-        Question::create(['company_id' => $this->company->id, 'content' => '有効', 'is_active' => true, 'order' => 1]);
-        Question::create(['company_id' => $this->company->id, 'content' => '無効', 'is_active' => false, 'order' => 2]);
+        Question::create(['company_id' => $this->company->id, 'content' => '有効', 'is_active' => true, 'display_order' => 1]);
+        Question::create(['company_id' => $this->company->id, 'content' => '無効', 'is_active' => false, 'display_order' => 2]);
 
         $response = $this->actingAs($this->user)->getJson('/api/questions');
 
@@ -61,16 +64,28 @@ final class GetQuestionsTest extends TestCase
         $response->assertJsonPath('data.0.text', '有効');
     }
 
-    public function test_orderカラムで昇順にソートされる(): void
+    public function test_display_orderカラムで昇順にソートされる(): void
     {
-        Question::create(['company_id' => $this->company->id, 'content' => '後', 'is_active' => true, 'order' => 2]);
-        Question::create(['company_id' => $this->company->id, 'content' => '先', 'is_active' => true, 'order' => 1]);
+        Question::create(['company_id' => $this->company->id, 'content' => '後', 'is_active' => true, 'display_order' => 2]);
+        $first = Question::create(['company_id' => $this->company->id, 'content' => '先', 'is_active' => true, 'display_order' => 1]);
 
         $response = $this->actingAs($this->user)->getJson('/api/questions');
 
         $response->assertOk();
+        $response->assertJsonPath('data.0.id', $first->id);
         $response->assertJsonPath('data.0.text', '先');
-        $response->assertJsonPath('data.1.text', '後');
+    }
+
+    public function test_display_orderが同じ場合はid昇順で安定してソートされる(): void
+    {
+        $first = Question::create(['company_id' => $this->company->id, 'content' => '先', 'is_active' => true, 'display_order' => 1]);
+        $second = Question::create(['company_id' => $this->company->id, 'content' => '後', 'is_active' => true, 'display_order' => 1]);
+
+        $response = $this->actingAs($this->user)->getJson('/api/questions');
+
+        $response->assertOk();
+        $response->assertJsonPath('data.0.id', $first->id);
+        $response->assertJsonPath('data.1.id', $second->id);
     }
 
     public function test_未認証ではアクセスできない(): void
