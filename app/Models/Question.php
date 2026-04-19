@@ -16,6 +16,7 @@ final class Question extends Model
         'company_id',
         'content',
         'is_active',
+        'display_order',
     ];
 
     protected function casts(): array

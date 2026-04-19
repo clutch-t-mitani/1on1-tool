@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\Admin\UserController;
 use App\Http\Controllers\Api\AnalysisController;
 use App\Http\Controllers\Api\DailyLogController;
 use App\Http\Controllers\Api\LoginController;
+use App\Http\Controllers\Api\QuestionController;
 use App\Http\Controllers\Api\ViewerAnalysisController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -26,6 +27,9 @@ Route::middleware('auth:sanctum')->group(function (): void {
     ]));
 
     Route::post('/logout', [LoginController::class, 'destroy']);
+
+    // 質問一覧
+    Route::get('/questions', [QuestionController::class, 'index']);
 
     // 日次ログ
     Route::post('/daily-logs/text', [DailyLogController::class, 'storeText']);

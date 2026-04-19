@@ -32,6 +32,22 @@
             </div>
         </div>
 
+        <!-- ローディング -->
+        <div v-else-if="isLoadingQuestions" class="flex flex-col items-center gap-4 py-16">
+            <div class="h-10 w-10 animate-spin rounded-full border-4 border-indigo-200 border-t-indigo-500"></div>
+            <p class="text-sm text-slate-400">質問を読み込んでいます…</p>
+        </div>
+
+        <!-- 質問取得エラー -->
+        <div v-else-if="questionsError" class="rounded-2xl border border-rose-200 bg-rose-50 p-6 text-center">
+            <p class="text-sm font-medium text-rose-600">{{ questionsError }}</p>
+        </div>
+
+        <!-- 質問なし -->
+        <div v-else-if="questions.length === 0" class="rounded-2xl border border-slate-200 bg-white p-6 text-center">
+            <p class="text-sm text-slate-500">質問が登録されていません。管理者に連絡してください。</p>
+        </div>
+
         <!-- ステップ入力フォーム -->
         <div v-else>
             <!-- プログレス表示 -->
@@ -154,29 +170,41 @@
 </template>
 
 <script setup>
-import { ref, computed, onUnmounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 import AppLayout from '../layouts/AppLayout.vue';
+import axios from 'axios';
 
-const questions = [
-    { id: 1, text: '今日やったことを教えてください（文脈・背景など）' },
-    { id: 2, text: '今日感じたプラスの感情はなんですか？' },
-    { id: 3, text: '今日感じたマイナスの感情はなんですか？' },
-    { id: 4, text: '本音ベースで、今の気持ちを自由に話してください（独り言・生のログ）' },
-];
+const questions = ref([]);
+const isLoadingQuestions = ref(true);
+const questionsError = ref('');
 
 const today = new Date().toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' });
 
 const currentStep = ref(0);
 const isConfirmStep = ref(false);
 
-const answers = ref(
-    questions.map(() => ({
-        mode: 'text',
-        text: '',
-        audioBlob: null,
-        audioDuration: 0,
-    }))
-);
+const answers = ref([]);
+
+onMounted(async () => {
+    try {
+        const response = await axios.get('/api/questions');
+        const fetchedQuestions = response.data?.data;
+        if (!Array.isArray(fetchedQuestions)) {
+            throw new Error('Invalid questions response');
+        }
+        questions.value = fetchedQuestions;
+        answers.value = questions.value.map(() => ({
+            mode: 'text',
+            text: '',
+            audioBlob: null,
+            audioDuration: 0,
+        }));
+    } catch {
+        questionsError.value = '質問の取得に失敗しました。時間をおいて再試行してください。';
+    } finally {
+        isLoadingQuestions.value = false;
+    }
+});
 
 // 音声録音
 const isRecording = ref(false);
@@ -188,9 +216,9 @@ let recordingTimer = null;
 let recordingStepIndex = null;
 let audioChunks = [];
 
-const currentQuestion = computed(() => questions[currentStep.value]);
+const currentQuestion = computed(() => questions.value[currentStep.value]);
 const currentAnswer = computed(() => answers.value[currentStep.value]);
-const isLastStep = computed(() => currentStep.value === questions.length - 1);
+const isLastStep = computed(() => currentStep.value === questions.value.length - 1);
 
 const canProceed = computed(() => {
     const answer = currentAnswer.value;
